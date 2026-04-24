@@ -1,0 +1,646 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: XMail Gmail analytics API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: gmail
+    description: Gmail analytics operations
+  - name: accounts
+    description: Connected accounts management
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/google/url:
+    get:
+      operationId: getGoogleAuthUrl
+      tags: [auth]
+      summary: Get Google OAuth URL
+      description: Returns the Google OAuth redirect URL
+      responses:
+        "200":
+          description: Auth URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUrl"
+
+  /auth/google/callback:
+    get:
+      operationId: googleAuthCallback
+      tags: [auth]
+      summary: Handle Google OAuth callback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+        "400":
+          description: Auth error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /gmail/response-times:
+    get:
+      operationId: getResponseTimes
+      tags: [gmail]
+      summary: Get response time analytics
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [7, 14, 30]
+            default: 7
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Response time analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseTimeAnalytics"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /gmail/top-senders:
+    get:
+      operationId: getTopSenders
+      tags: [gmail]
+      summary: Get top email senders
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Top senders list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopSendersResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /gmail/inbox-health:
+    get:
+      operationId: getInboxHealth
+      tags: [gmail]
+      summary: Get inbox health score and metrics
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Inbox health data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboxHealthResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /gmail/weekly-report:
+    get:
+      operationId: getWeeklyReport
+      tags: [gmail]
+      summary: Get weekly email report
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Weekly email report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReportResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /gmail/dashboard-summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [gmail]
+      summary: Get dashboard overview summary
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts:
+    get:
+      operationId: getConnectedAccounts
+      tags: [accounts]
+      summary: Get all connected Google accounts (hidden admin)
+      responses:
+        "200":
+          description: Connected accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectedAccountsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{accountId}:
+    delete:
+      operationId: removeAccount
+      tags: [accounts]
+      summary: Remove a connected account
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{accountId}/sync:
+    post:
+      operationId: syncAccount
+      tags: [accounts]
+      summary: Sync Gmail data for an account
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sync initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{accountId}/trash:
+    get:
+      operationId: getAccountTrash
+      tags: [accounts]
+      summary: Get trash emails for an account (hidden admin)
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trash emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrashResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    AuthUrl:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        picture:
+          type: string
+        isAuthenticated:
+          type: boolean
+      required:
+        - id
+        - email
+        - name
+        - isAuthenticated
+
+    ResponseTimeEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        avgResponseMinutes:
+          type: number
+        emailCount:
+          type: integer
+      required:
+        - date
+        - avgResponseMinutes
+        - emailCount
+
+    SlowClient:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        avgResponseMinutes:
+          type: number
+        emailCount:
+          type: integer
+      required:
+        - email
+        - name
+        - avgResponseMinutes
+        - emailCount
+
+    ResponseTimeAnalytics:
+      type: object
+      properties:
+        avgResponseMinutes:
+          type: number
+        days:
+          type: integer
+        trend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResponseTimeEntry"
+        slowestClients:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlowClient"
+      required:
+        - avgResponseMinutes
+        - days
+        - trend
+        - slowestClients
+
+    SenderEntry:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        count:
+          type: integer
+        category:
+          type: string
+          enum: [client, team, newsletter, other]
+      required:
+        - email
+        - name
+        - count
+        - category
+
+    TopSendersResponse:
+      type: object
+      properties:
+        senders:
+          type: array
+          items:
+            $ref: "#/components/schemas/SenderEntry"
+        totalEmailsAnalyzed:
+          type: integer
+      required:
+        - senders
+        - totalEmailsAnalyzed
+
+    PeakHour:
+      type: object
+      properties:
+        hour:
+          type: integer
+        count:
+          type: integer
+      required:
+        - hour
+        - count
+
+    InboxHealthResponse:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        unreadCount:
+          type: integer
+        avgAgeOfUnreadDays:
+          type: number
+        peakHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/PeakHour"
+        lastUpdated:
+          type: string
+      required:
+        - score
+        - unreadCount
+        - avgAgeOfUnreadDays
+        - peakHours
+        - lastUpdated
+
+    DailyVolume:
+      type: object
+      properties:
+        day:
+          type: string
+        received:
+          type: integer
+        sent:
+          type: integer
+      required:
+        - day
+        - received
+        - sent
+
+    WeeklyReportResponse:
+      type: object
+      properties:
+        weekStart:
+          type: string
+        weekEnd:
+          type: string
+        totalReceived:
+          type: integer
+        totalSent:
+          type: integer
+        busiestDay:
+          type: string
+        avgResponseMinutes:
+          type: number
+        dailyVolume:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyVolume"
+      required:
+        - weekStart
+        - weekEnd
+        - totalReceived
+        - totalSent
+        - busiestDay
+        - avgResponseMinutes
+        - dailyVolume
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalEmails:
+          type: integer
+        unreadCount:
+          type: integer
+        avgResponseMinutes:
+          type: number
+        inboxScore:
+          type: integer
+        topSenderEmail:
+          type: string
+        topSenderName:
+          type: string
+        weeklyChange:
+          type: number
+          description: Percentage change vs previous week
+      required:
+        - totalEmails
+        - unreadCount
+        - avgResponseMinutes
+        - inboxScore
+        - topSenderEmail
+        - topSenderName
+        - weeklyChange
+
+    ConnectedAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        picture:
+          type: string
+        connectedAt:
+          type: string
+        lastSyncAt:
+          type: string
+      required:
+        - id
+        - email
+        - name
+        - connectedAt
+
+    ConnectedAccountsResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectedAccount"
+        total:
+          type: integer
+      required:
+        - accounts
+        - total
+
+    TrashEmail:
+      type: object
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+        subject:
+          type: string
+        date:
+          type: string
+        snippet:
+          type: string
+      required:
+        - id
+        - from
+        - subject
+        - date
+
+    TrashResponse:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrashEmail"
+        total:
+          type: integer
+      required:
+        - emails
+        - total
